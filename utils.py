@@ -14,8 +14,11 @@ offset = 275    # deg
 
 
 def main():
-    subprocess.call(connectToRPi)
-    f = open(fileName, 'rb')
+    try:
+        f = open(fileName, 'rb')
+    except FileNotFoundError:
+        subprocess.call(connectToRPi)
+        f = open(fileName, 'rb')
     f.seek(-dataLen * dispLen, 2)
     t0 = 1456519594.0
     dirCnt = 0
@@ -58,7 +61,7 @@ def main():
     if (initTime == 0) or (finalTime == 0):
         vel = 0
     else:
-        vel = int(velCnt * 2.23 / (finalTime - initTime))
+        vel = int((velCnt-1) * 2.23 / (finalTime - initTime))
 
     print('Wind is {0:3d} mph at {1:3d} degrees'.format(vel, dir))
     time.sleep(1)

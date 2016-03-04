@@ -9,7 +9,7 @@ from PySide import QtGui, QtCore
 connectToRPi = ['sshfs', '10.11.2.189:/home/gbf/WindMon', '/home/gbf/repos/WindMon/rpi']
 disconnectFromRPi = ['fusermount', '-u', '/home/gbf/repos/WindMon/rpi']
 statusAlive = threading.Event()
-interval = 2    # Interval in seconds between data samples
+interval = 5    # Interval in seconds between data samples
 
 class Form(QtGui.QDialog):
 
@@ -51,7 +51,11 @@ class Form(QtGui.QDialog):
         north = 26360   # raw a/d
         offset = 255    # deg
 
-        f = open(fileName, 'rb')
+        try:
+            f = open(fileName, 'rb')
+        except FileNotFoundError:
+            subprocess.call(connectToRPi)
+            f = open(fileName, 'rb')
         f.seek(-dataLen * dispLen, 2)
 
         for i in range(0,dispLen):
@@ -81,7 +85,7 @@ class Form(QtGui.QDialog):
         if (initTime == 0) or (finalTime == 0):
             vel = 0
         else:
-            vel = int(velCnt * 2.23 / (finalTime - initTime))
+            vel = int((velCnt-1) * 2.23 / (finalTime - initTime))
         return (vel, dir)
 
 
@@ -115,7 +119,7 @@ def main():
     window.show()
     app.exec_()
     statusAlive.clear()
-    time.sleep(2 * interval)                  # Stop fetching wind data
+    time.sleep(int(1.2 * interval))                  # Stop fetching wind data
     subprocess.call(disconnectFromRPi)   # Un-mount RPi on local system
 
 
