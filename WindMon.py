@@ -129,7 +129,8 @@ def direction():
 def main():
     initializeSystem()
     # spawn thread 1 - 1 sec sampling of A/D
-    threading.Thread(target=direction).start()
+    directionThread = threading.Thread(target=direction)
+    directionThread.start()
     # spawn thread 2 - recording time of anemometer switch closings
     velocityThread = threading.Thread(target = velocity)
     velocityThread.start()
