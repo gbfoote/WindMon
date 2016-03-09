@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 '''PySide widget to display wind velocity and direction'''
 
-fileName = 'rpi/Wind.bin'
 import sys, threading, time,subprocess
 from PySide import QtGui, QtCore
 
@@ -40,7 +39,7 @@ class Form(QtGui.QDialog):
         statusAlive.set()
         source.start()
 
-    def fetchData(self):
+    def fetchDataOld(self):
         # t0 = time.mktime((2016,1,1,0,0,0,0,0,0))
         fileName = '/home/gbf/repos/WindMon/rpi/Wind.bin'
         dirCnt = 0
@@ -86,6 +85,55 @@ class Form(QtGui.QDialog):
             vel = 0
         else:
             vel = int((velCnt-1) * 2.23 / (finalTime - initTime))
+        return (vel, dir)
+
+    def fetchData(self):
+        # t0 = time.mktime((2016,1,1,0,0,0,0,0,0))
+        fileName = '/home/gbf/repos/WindMon/rpi/Wind.txt'
+        #dirCnt = 0
+        #velCnt = 0
+        dirSum = 0
+        dispLen = 80
+        dataLen = 8
+        north = 26360   # raw a/d
+        offset = 255    # deg
+        noReadings = 5
+        lineLength = 23
+
+        try:
+            f = open(fileName, 'r')
+        except FileNotFoundError:
+            subprocess.call(connectToRPi)
+            f = open(fileName, 'r')
+        f.seek(0, 2)
+        pos = f.tell()
+        f.seek(pos - noReadings*lineLength, 0)
+        lines = f.readlines()
+        f.close()
+        n = len(lines)
+        lines = lines[n - noReadings:]
+        data = []
+        for l in lines:
+            l = l[:-1].split(',')
+            d = []
+            for i in l:
+                d.append(int(i))
+            data.append(d)
+        sumDir = 0
+        sumVel = 0
+        for reading in data:
+            sumVel += reading[2]
+            d = reading[1]
+            if sumDir == 0:
+                d0 = d
+            if d - d0 > north / 2:
+                d -= north
+            if d0 -d > north / 2:
+                d += north
+            sumDir += d
+
+        dir = (offset + int(360.0 * sumDir / noReadings / north)) % 360
+        vel = int(sumVel * 2.33 /noReadings)
         return (vel, dir)
 
 
