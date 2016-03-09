@@ -19,6 +19,9 @@ Output data structure:
 # Constants
 
 fileName = 'Wind.bin'   # Output File Name
+textFileName = 'Wind.txt'
+
+velCounter = 0
 
 alert = 4       # GPIO4
 switch = 14     # GPIO14
@@ -100,7 +103,8 @@ def velocity():
         b = formatedTime() + b'\x00\x80'
         writeFile(b)
         t = time.time()
-        print('Switched at {0:4X}H sec and {1:2X}H 0.1 msec'.format(int(t), int((t-int(t))*10000)))
+        velCounter += 1
+        #print('Switched at {0:4X}H sec and {1:2X}H 0.1 msec'.format(int(t), int((t-int(t))*10000)))
 
 def direction():
     # set bit 15 for direction
@@ -112,7 +116,11 @@ def direction():
         dir = adc.readReg(convReg)
         b = formatedTime() + dir.to_bytes(2, 'little')
         writeFile(b)
-        print ('At {0:14.3f} voltage was {1:6d} and direction was {2:3d} deg'.format(time.time(),int(dir), int(dir*360.0/26360)))
+        #print ('At {0:14.3f} voltage was {1:6d} and direction was {2:3d} deg'.format(time.time(),int(dir), int(dir*360.0/26360)))
+        with open(textFileName, 'a') as tf:
+            tf.write('{0:10d},{1:5d},{2:3d}\n'.format(int(time.time()), int(dir), velCounter))
+            tf.close()
+        velCounter = 0
         #write time, direction to file
         #print('registers = {0:4X}, {1:4X}, {2:4X}'.format(a, b, c))
 
