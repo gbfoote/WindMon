@@ -67,7 +67,7 @@ class i2cDev(object):
         self.writeReg(hiReg, hi_thresh)         # High threshold register
         self.writeReg(loReg, lo_thresh)         # Low threshold register
         self.writeReg(confReg, configReg)       # Configuration register
-        print('registers = {0:4X}, {1:4X}, {2:4X}'.format(configReg, hi_thresh, lo_thresh))
+        # print('registers = {0:4X}, {1:4X}, {2:4X}'.format(configReg, hi_thresh, lo_thresh))
 
     def startConversion(self):
         self.writeReg(confReg, (1<<15) & configReg)
@@ -96,6 +96,7 @@ def writeFile(b):
         f.close()
 
 def velocity():
+    global velCounter
     # Set bit 15 = 1 for velocity
     while True:
         #time.sleep(1.0)
@@ -107,6 +108,7 @@ def velocity():
         #print('Switched at {0:4X}H sec and {1:2X}H 0.1 msec'.format(int(t), int((t-int(t))*10000)))
 
 def direction():
+    global velCounter
     # set bit 15 for direction
     adc = i2cDev(adc_addr)
     while True:
