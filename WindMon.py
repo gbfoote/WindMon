@@ -22,6 +22,8 @@ fileName = 'Wind.bin'   # Output File Name
 textFileName = 'Wind.txt'
 
 velCounter = 0
+t0 = time.time()
+velThreshold = 0.02     # Sec = 116 mph
 
 alert = 4       # GPIO4
 switch = 14     # GPIO14
@@ -96,15 +98,16 @@ def writeFile(b):
         f.close()
 
 def velocity():
-    global velCounter
+    global velCounter, t0, velThreshold
     # Set bit 15 = 1 for velocity
     while True:
         #time.sleep(1.0)
         GPIO.wait_for_edge(switch, GPIO.FALLING)
-        b = formatedTime() + b'\x00\x80'
-        writeFile(b)
-        t = time.time()
-        velCounter += 1
+        t= time.time()
+        if (t - t0) > velThreshold:     # skip switch bouonce
+            b = formatedTime() + b'\x00\x80'
+            writeFile(b)
+            velCounter += 1
         #print('Switched at {0:4X}H sec and {1:2X}H 0.1 msec'.format(int(t), int((t-int(t))*10000)))
 
 def direction():

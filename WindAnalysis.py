@@ -1,8 +1,16 @@
 #!/usr/bin/python3
 '''Look at velocity distribution'''
 
+import time
+
 fileName = 'Wind.bin'
 arraySize = 60
+
+# Turbine power curve
+power = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.24, 0.35, 0.43, 0.65,
+        0.94, 1.21, 1.48, 1.85, 2.26, 2.8, 3.28, 3.79, 4.25,
+        4.76, 5.89, 7.71, 8.57, 9.03, 9.19, 9.38, 9.68, 10.16, 10.51]
+electricRate = 0.17 # $/kWh
 
 def fetchRecord(file):
     recordLen = 8
@@ -22,12 +30,11 @@ def fetchRecord(file):
                 break
     return (OK, t1)
 
-
-
-
-def main():
+def summarizePwrByTick():
+    global power
     # Initialize hystogram
     a = [0]
+    lastVel = 0
     for i in range(arraySize):
         a.append(0)
     velCnt = 0
@@ -46,11 +53,58 @@ def main():
             if (vel < arraySize) and (vel >= 0):
                 a[vel] += dt
             else:
-                print(dt, v, vel)
+                pass
+                #print(time.asctime(time.localtime(t))+' {0:6.4f} {2:5d} {1:5d}'.format(dt, vel, lastVel))
+            lastVel = vel
     i = 0
+    s = sum(a)
+    s1 = 0.0
+
     for t in a:
-        print('{0:2d} mph  for {1:10.0f} sec'.format(i, t))
+        print('{0:2d} mph  for {1:6.3f}% of the time'.format(i, 100.0 * t/s))
+        if i >= len(power):
+            p = power[len(power)-1]
+        else:
+            p = power[i]
+        s1 += (t / s * p)
         i += 1
+        hoursPerYear = 365.25 * 25
+    print ('Average power is: {0:6.3f} kW or {1:6.3f} mWh/yr or {2:6.0f} $/yr'\
+            .format(s1, s1 * hoursPerYear / 1000, s1 * hoursPerYear * electricRate))
+
+def averagedPwr():
+    pass
+
+def erroniousTicks():
+
+    threshold = 0.03    # ms
+    f = open(fileName, 'rb')
+    noTicks = 5
+    cnt = 0
+    dt = []
+    (OK, t) = fetchRecord(f)
+    t0 = t
+    for i in range(noTicks):
+        (OK,  t) = fetchRecord(f)
+        dt.append(t - t0)
+        t0 = t
+    while OK:
+        (OK,  t) = fetchRecord(f)
+        if OK:
+            for i in range(noTicks-1):
+                dt[i] = dt[i +1]
+            delta = t - t0
+            t0 = t
+            dt[noTicks-1] = delta
+            if delta < threshold:
+                cnt += 1
+                #print(dt)
+    print ('{0:7d} error counts'.format(cnt))
+
+
+def main():
+    # summarizePwrByTick()
+    erroniousTicks()
 
 
 if __name__ == '__main__':
