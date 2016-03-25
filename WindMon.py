@@ -64,7 +64,11 @@ class i2cDev(object):
 
     def __init__(self, addr):
         self.addr = addr
-
+        # Setup GPIO
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        GPIO.setup(alert, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+        GPIO.setup(switch, GPIO.IN, pull_up_down = GPIO.PUD_UP)
         # Setup A/D Converter
         self.writeReg(hiReg, hi_thresh)         # High threshold register
         self.writeReg(loReg, lo_thresh)         # Low threshold register
@@ -191,7 +195,7 @@ def direction():
         #print('registers = {0:4X}, {1:4X}, {2:4X}'.format(a, b, c))
 
 def main():
-    initializeSystem()
+    #initializeSystem()
     outputQueue = queue.Queue()
     # Start the file-writer
     wrt = binaryWriter(outputQueue)
