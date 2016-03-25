@@ -67,16 +67,16 @@ class i2cDev(object):
         # Setup GPIO
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
-        GPIO.setup(alert, GPIO.IN, pull_up_down = GPIO.PUD_UP)
-        GPIO.setup(switch, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+        GPIO.setup(i2cDev.alert, GPIO.IN, pull_up_down = GPIO.PUD_UP)
+        GPIO.setup(i2cDev.switch, GPIO.IN, pull_up_down = GPIO.PUD_UP)
         # Setup A/D Converter
-        self.writeReg(hiReg, hi_thresh)         # High threshold register
-        self.writeReg(loReg, lo_thresh)         # Low threshold register
-        self.writeReg(confReg, configReg)       # Configuration register
+        self.writeReg(i2cDev.hiReg, i2cDev.hi_thresh)         # High threshold register
+        self.writeReg(i2cDev.loReg, i2cDev.lo_thresh)         # Low threshold register
+        self.writeReg(i2cDev.confReg, i2cDev.configReg)       # Configuration register
         # print('registers = {0:4X}, {1:4X}, {2:4X}'.format(configReg, hi_thresh, lo_thresh))
 
     def startConversion(self):
-        self.writeReg(confReg, (1<<15) & configReg)
+        self.writeReg(i2cDev.confReg, (1<<15) & i2cDev.configReg)
 
     def readReg(self, regAddr):
         a = self.bus.read_word_data(self.addr, regAddr)
@@ -102,24 +102,25 @@ class binaryWriter(threading.Thread):
 
 class velLogger(threading.Thread):
 
-    global velCounter
     velThreshold = 0.02
 
     def __init__(self, outputQueue):
+        global velCounter
         threading.Thread.__init__(self)
         self.queue = outputQueue
         self.t0 = time.time()
         velCounter = 0
 
     def run(self):
+        global velCounter
         while True:
             #time.sleep(1.0)
-            GPIO.wait_for_edge(switch, GPIO.FALLING)
+            GPIO.wait_for_edge(i2cDev.switch, GPIO.FALLING)
             t= time.time()
-            if (t - t0) > velThreshold:     # skip switch bouonce
+            if (t - t0) > velLogger.velThreshold:     # skip switch bouonce
                 b = formatedTime() + b'\x00\x80'
                 self.queue.put(b)
-                self.counter += 1
+                velCounter += 1
 
 class directionLogger(threading.Thread):
     def __init__(self, outputQueue):
@@ -134,7 +135,7 @@ class directionLogger(threading.Thread):
             #wait for 1 sec
             time.sleep(1.0)
             #read direction
-            dir = self.adc.readReg(convReg)
+            dir = self.adc.readReg(i2cDev.convReg)
             b = formatedTime() + dir.to_bytes(2, 'little')
             self.queue.put(b)
             #print ('At {0:14.3f} voltage was {1:6d} and direction was {2:3d} deg'.format(time.time(),int(dir), int(dir*360.0/26360)))
@@ -203,13 +204,13 @@ def main():
     wrt.start()
     # spawn thread 1 - 1 sec sampling of A/D
     d = directionLogger(outputQueue)
-    d.setDaemon(True)
+    #d.setDaemon(True)
     d.start()
     #directionThread = threading.Thread(target=direction)
     #directionThread.start()
     # spawn thread 2 - recording time of anemometer switch closings
     v = velLogger(outputQueue)
-    v.setDaemon(True)
+    #v.setDaemon(True)
     v.start()
     #velocityThread = threading.Thread(target = velocity)
     #velocityThread.start()
